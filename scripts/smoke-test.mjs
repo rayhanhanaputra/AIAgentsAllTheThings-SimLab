@@ -50,6 +50,9 @@ for (const id of ids) {
     assert.equal(response.security_mode, profile);
     assert.equal(response.status, expectedStatus);
     assert.equal(response.actions[0]?.name, expectedAction);
+    assert.equal(typeof response.perceived, 'string');
+    if (profile === 'validated') assert.equal(response.actions[0]?.blocked, true);
+    assert.equal((await json(`/api/simulations/${id}/health`)).name, `simlab-${id}`);
 
     const snapshot = await json(`/api/simulations/${id}/state`);
     assert.deepEqual(snapshot.state.lastInput, sample);

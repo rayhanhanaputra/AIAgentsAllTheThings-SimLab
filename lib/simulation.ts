@@ -43,7 +43,14 @@ export type SimulationState = {
   metric: number;
   lastInput: unknown;
   responseText: string;
-  actions: Array<{ name: string; arguments: Record<string, unknown> }>;
+  actions: Array<{
+    name: string;
+    arguments: Record<string, unknown>;
+    blocked?: boolean;
+    error?: string;
+  }>;
+  /** What the agent read from the input, for Crosswire's delivery check. */
+  perceived: string;
   lastSource: 'local' | 'workbench' | 'external' | null;
   workbenchConnectedAt: string | null;
   events: SimulationEvent[];
@@ -197,6 +204,7 @@ function initialState(scenario: Scenario): SimulationState {
     lastInput: null,
     responseText: 'Awaiting a Workbench input.',
     actions: [],
+    perceived: '',
     lastSource: null,
     workbenchConnectedAt: null,
     events: [
@@ -236,7 +244,7 @@ export function getScenario(id: ScenarioId): Scenario {
   return scenarioMap.get(id) ?? scenarios[0];
 }
 
-function flatten(value: unknown): string {
+export function flatten(value: unknown): string {
   if (typeof value === 'string') return value;
   if (typeof value === 'number' || typeof value === 'boolean')
     return String(value);
@@ -326,6 +334,8 @@ export function processAgentInput(
       {
         name: 'security_event',
         arguments: { reason: 'untrusted_instruction', blocked: true },
+        blocked: true,
+        error: 'untrusted instruction kept as data',
       },
     ];
     events.push(
@@ -362,6 +372,7 @@ export function processAgentInput(
     lastInput: input,
     responseText,
     actions,
+    perceived: rendered,
     lastSource: source,
     workbenchConnectedAt:
       source === 'workbench'
